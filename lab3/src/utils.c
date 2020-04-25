@@ -6,7 +6,7 @@ void GenerateArray(int *array, unsigned int array_size, unsigned int seed) {
   srand(seed);
 	int i = 0;
 	while (i < array_size) {
-   		array[i] = rand();
+   		array[i] = rand() % 10;
 		i++;
   	}
 }
