@@ -15,26 +15,42 @@
 #include "find_min_max.h"
 #include "utils.h"
 
+pid_t group_pid[1000];
+int ii = 0;
+void terminate (int param)
+{
+     printf("WE KILL ALL child!!! %d\n", ii);
+    int i = 0;
+    for (;i < ii; i++) {
+        printf("kill %d", group_pid[ii]);
+        kill(group_pid[ii], SIGKILL);
+    }
+   
+}
+
 int main(int argc, char **argv) {
   int seed = -1;
   int array_size = -1;
   int pnum = -1;
   bool with_files = false;
+  int timeout = -1;
 
   while (true) {
+      
     int current_optind = optind ? optind : 1;
 
     static struct option options[] = {{"seed", required_argument, 0, 0},
                                       {"array_size", required_argument, 0, 0},
                                       {"pnum", required_argument, 0, 0},
                                       {"by_files", no_argument, 0, 'f'},
+				                      {"timeout", required_argument,0,0},
                                       {0, 0, 0, 0}};
 
     int option_index = 0;
+    
     int c = getopt_long(argc, argv, "f", options, &option_index);
 
     if (c == -1) break;
-
     switch (c) {
       case 0:
         switch (option_index) {
@@ -65,6 +81,13 @@ int main(int argc, char **argv) {
           case 3:
             with_files = true;
             break;
+	  case 4:
+	    timeout = atoi(optarg);
+	    if (timeout <= 0) {
+            	printf("timeout is a positive number of seconds\n");
+            	return 1;
+            }
+	    break;
 
           defalut:
             printf("Index %d is out of options\n", option_index);
@@ -88,10 +111,15 @@ int main(int argc, char **argv) {
   }
 
   if (seed == -1 || array_size == -1 || pnum == -1) {
-    printf("Usage: %s --seed \"num\" --array_size \"num\" --pnum \"num\" \n",
+    printf("Usage: %s --seed \"num\" --array_size \"num\" --pnum \"num\" --timeout \"num\" \n",
            argv[0]);
     return 1;
   }
+
+  void (*funcptr)(int); // указатель на функцию
+  funcptr = signal (SIGALRM, terminate); // обработка сигнала
+  alarm(timeout);
+
 
   int *array = malloc(sizeof(int) * array_size);
   GenerateArray(array, array_size, seed);
@@ -101,7 +129,7 @@ int main(int argc, char **argv) {
   gettimeofday(&start_time, NULL);
  
   FILE *fpmin,*fpmax;
-  int pipefd[pnum][2];   
+  int pipefd[pnum][2];
 
   int i = 0;
   for (; i < pnum; i++) {
@@ -145,6 +173,9 @@ int main(int argc, char **argv) {
         }
         return 0;
       }
+        //setpgid(child_pid, group_pid);
+        group_pid[ii++] = child_pid;
+        sleep(1);
 
     } else {
       printf("Fork failed!\n");
