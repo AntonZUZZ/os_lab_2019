@@ -21,9 +21,12 @@ void terminate (int param)
 {
      printf("WE KILL ALL child!!! %d\n", ii);
     int i = 0;
+    int ret;
     for (;i < ii; i++) {
-        printf("kill %d", group_pid[ii]);
-        kill(group_pid[ii], SIGKILL);
+        printf("try kill %d", group_pid[i]);
+        kill(group_pid[i], SIGKILL);
+        ret = waitpid(group_pid[i], NULL, WNOHANG);
+        printf("\nkill %d\n", ret);
     }
    
 }
@@ -33,7 +36,7 @@ int main(int argc, char **argv) {
   int array_size = -1;
   int pnum = -1;
   bool with_files = false;
-  int timeout = -1;
+  int timeout = 0;
 
   while (true) {
       
